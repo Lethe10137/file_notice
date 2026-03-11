@@ -10,7 +10,7 @@ categories = ["filesystem", "asynchronous"]
 
 [dependencies]
 inotify = "0.11.1"
-tokio = { version = "1.50.0", features = ["fs", "io-util", "macros", "rt", "time"], optional = true }
+tokio = { version = "1", features = ["fs", "io-util", "macros", "rt", "time"], optional = true }
 
 [dev-dependencies]
 tempfile = "3"

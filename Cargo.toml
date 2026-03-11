@@ -1,0 +1,20 @@
+[package]
+name = "file-notice"
+version = "0.1.0"
+edition = "2024"
+description = "Wait for a marker file to appear using Linux inotify"
+license = "MIT OR Apache-2.0"
+repository = "https://https://github.com/Lethe10137/file_notice"
+keywords = ["file", "inotify", "notification", "linux", "tokio"]
+categories = ["filesystem", "asynchronous"]
+
+[dependencies]
+inotify = "0.11.1"
+tokio = { version = "1.50.0", features = ["fs", "io-util", "macros", "rt", "time"], optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["with-tokio"]
+with-tokio = ["dep:tokio"]

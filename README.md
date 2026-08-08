@@ -149,6 +149,8 @@ Possible cases include:
 - `FileMarker` attempts to remove the marker file on drop, ignoring removal errors.
 - `FileWaiter::new` is intended for waiting on a **future** creation event, so it returns `AlreadyExists` if the target file already exists at construction time.
 - You can still call the wait methods after the file appears, and they return immediately if the file already exists at that point.
+- The marker file can appear either by direct creation or by being renamed into place (a common atomic-write pattern); both are detected.
+- A relative marker path with no directory component (e.g. `"marker"`) is watched relative to the current directory.
 
 ## Testing
 
@@ -159,6 +161,8 @@ This crate includes integration tests covering:
 - async waiter behavior
 - already-existing marker handling
 - invalid path handling
+- rename-into-place marker creation
+- relative marker paths without a directory component
 
 ## License
 

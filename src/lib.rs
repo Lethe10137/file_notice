@@ -143,8 +143,16 @@ fn check_file_path(marker: impl AsRef<Path>) -> Result<(OsString, PathBuf), File
     let Some(file_name) = marker.file_name().map(|n| n.to_os_string()) else {
         return Err(FileWaitError::InvalidMarkerPath(marker.to_path_buf()));
     };
-    let Some(dir) = marker.parent().map(|d| d.to_path_buf()) else {
+    let Some(dir) = marker.parent() else {
         return Err(FileWaitError::InvalidMarkerPath(marker.to_path_buf()));
+    };
+    // `Path::parent` returns `Some("")` for a bare relative file name (e.g.
+    // "marker.txt"), which is not a usable watch target. Treat it as the
+    // current directory instead.
+    let dir = if dir.as_os_str().is_empty() {
+        PathBuf::from(".")
+    } else {
+        dir.to_path_buf()
     };
     Ok((file_name, dir))
 }
@@ -159,15 +167,24 @@ impl FileWaiter {
     pub fn new(marker: impl AsRef<Path>) -> Result<Self, FileWaitError> {
         let marker = marker.as_ref();
         let (file_name, dir) = check_file_path(marker)?;
+
+        // The watch is registered before checking whether the marker already
+        // exists, so that a file created concurrently with this call is
+        // always either caught by the `try_exists` check below or observed
+        // as an event afterwards. Checking existence first would leave a
+        // window in which a marker created (and possibly removed) between
+        // the check and the watch registration is missed entirely, causing
+        // later waits to block forever.
+        let inotify = Inotify::init().map_err(FileWaitError::IoError)?;
+        inotify
+            .watches()
+            .add(&dir, WatchMask::CREATE | WatchMask::MOVED_TO)
+            .map_err(FileWaitError::IoError)?;
+
         if marker.try_exists().map_err(FileWaitError::IoError)? {
             return Err(FileWaitError::AlreadyExists);
         }
 
-        let inotify = Inotify::init().map_err(FileWaitError::IoError)?;
-        inotify
-            .watches()
-            .add(&dir, WatchMask::CREATE)
-            .map_err(FileWaitError::IoError)?;
         Ok(Self {
             dir,
             file_name,
@@ -178,7 +195,7 @@ impl FileWaiter {
     /// Blocks until the marker file exists.
     ///
     /// If the file already exists when this method is called, it returns
-    /// immediately. Otherwise it waits for a matching creation event in the
+    /// immediately. Otherwise it waits for a matching creation/moved-to event in the
     /// watched directory.
     pub fn wait_until_file_marker_blocking(&mut self) -> Result<(), FileWaitError> {
         let marker = self.dir.join(&self.file_name);
@@ -236,7 +253,7 @@ impl AsyncFileWaiter {
     ///
     /// If the file already exists when this method is called, it returns
     /// immediately. Otherwise it waits for the watched inotify file descriptor
-    /// to become readable and scans for a matching creation event.
+    /// to become readable and scans for a matching creation/moved-to event.
     pub async fn wait_until_file_marker(&mut self) -> Result<(), FileWaitError> {
         let marker = self.dir.join(&self.file_name);
         if marker.exists() {

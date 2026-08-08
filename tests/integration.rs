@@ -70,6 +70,47 @@ fn blocking_waiter_returns_immediately_when_file_already_exists_after_constructi
 }
 
 #[test]
+fn blocking_waiter_observes_rename_into_place() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempdir()?;
+    let path = dir.path().join("marker");
+
+    let mut waiter = FileWaiter::new(&path)?;
+    let marker_path = path.clone();
+    let source_dir = dir.path().to_path_buf();
+
+    let creator = thread::spawn(move || -> Result<(), std::io::Error> {
+        thread::sleep(Duration::from_millis(50));
+        let tmp_path = source_dir.join("marker.tmp");
+        std::fs::write(&tmp_path, b"")?;
+        std::fs::rename(&tmp_path, &marker_path)?;
+        Ok(())
+    });
+
+    waiter.wait_until_file_marker_blocking()?;
+
+    creator.join().expect("marker creator thread panicked")?;
+    Ok(())
+}
+
+#[test]
+fn waiter_accepts_relative_marker_path_without_directory() -> Result<(), Box<dyn std::error::Error>>
+{
+    let dir = tempdir()?;
+    let original_dir = std::env::current_dir()?;
+    std::env::set_current_dir(dir.path())?;
+
+    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let mut waiter = FileWaiter::new("marker")?;
+        let _marker = FileMarker::new(PathBuf::from("marker"))?;
+        waiter.wait_until_file_marker_blocking()?;
+        Ok(())
+    })();
+
+    std::env::set_current_dir(original_dir)?;
+    result
+}
+
+#[test]
 fn waiter_rejects_invalid_marker_path() {
     let path = PathBuf::from("");
 

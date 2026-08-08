@@ -164,6 +164,12 @@ impl FileWaiter {
     /// Construction fails with [`FileWaitError::AlreadyExists`] if the file is
     /// already present, because the waiter is intended to observe a future
     /// creation event.
+    ///
+    /// This watches the marker's *parent directory*, so it wakes up for
+    /// every filesystem event in that directory, not just the marker's own
+    /// creation. Prefer a dedicated, low-traffic directory for the marker
+    /// (e.g. `/tmp/uid-my-app-<random>/`) over a shared, busy one (e.g.
+    /// `/tmp` directly) to avoid unnecessary wakeups.
     pub fn new(marker: impl AsRef<Path>) -> Result<Self, FileWaitError> {
         let marker = marker.as_ref();
         let (file_name, dir) = check_file_path(marker)?;

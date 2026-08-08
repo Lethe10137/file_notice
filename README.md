@@ -151,6 +151,7 @@ Possible cases include:
 - You can still call the wait methods after the file appears, and they return immediately if the file already exists at that point.
 - The marker file can appear either by direct creation or by being renamed into place (a common atomic-write pattern); both are detected.
 - A relative marker path with no directory component (e.g. `"marker"`) is watched relative to the current directory.
+- `FileWaiter` watches the marker's **parent directory**, not the file itself, so it wakes up for every filesystem event in that directory, not just the marker's own creation. Prefer a dedicated, low-traffic directory for the marker (e.g. `/tmp/uid-my-app-<random>/`) over a shared, busy one (e.g. `/tmp` directly) to avoid unnecessary wakeups.
 
 ## Testing
 

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Wait for a marker file to appear using Linux inotify"
 license = "MIT OR Apache-2.0"
-repository = "https://https://github.com/Lethe10137/file_notice"
+repository = "https://github.com/Lethe10137/file_notice"
 keywords = ["file", "inotify", "notification", "linux", "tokio"]
 categories = ["filesystem", "asynchronous"]
 

@@ -40,6 +40,12 @@
 //! # Ok(())
 //! # }
 //! ```
+#[cfg(not(target_os = "linux"))]
+compile_error!(
+    "file_notice currently supports Linux only (it is built on inotify). \
+     macOS support is planned but not yet implemented."
+);
+
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},

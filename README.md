@@ -1,5 +1,7 @@
 # `file_notice`
 
+> **Linux only.** This crate will fail to compile on other platforms (see [Platform support](#platform-support)).
+
 A small Rust crate for waiting on a file to appear as a lightweight notification mechanism.
 
 This crate is built on Linux `inotify` and is intended for simple file-based coordination between processes or tasks. A common pattern is:
@@ -16,7 +18,9 @@ This crate is built on Linux `inotify` and is intended for simple file-based coo
 
 ## Platform support
 
-`file_notice` currently supports **Linux only** because it relies on `inotify`.
+`file_notice` currently supports **Linux only** because it relies on `inotify`. Building this crate on any other target (including macOS and Windows) fails at compile time with a clear error message rather than a confusing dependency error.
+
+macOS support is planned but not implemented yet, and is not part of the initial release.
 
 If you need cross-platform filesystem notifications, this crate is probably not the right abstraction.
 
